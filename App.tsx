@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, ActivityStatus } from './types';
+import { Activity, ActivityStatus, markdownToActivities, activitiesToMarkdown } from './types';
 import { Agenda } from './components/Agenda';
 import { TimerPanel } from './components/TimerPanel';
 
@@ -134,79 +134,19 @@ const App: React.FC = () => {
   }, [activeActivityId, activities, meetingStartTime, sessionStartTime, ignoreThreshold]);
 
 
-  const handleImportCSV = (file: File) => {
+  const handleImportMarkdownTemplate = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
         const text = e.target?.result;
         if (typeof text !== 'string') return;
-
-        const allLines = text.split('\n').map(line => line.trim()).filter(Boolean);
-        if (allLines.length === 0) return;
-
-        const hasHeader = allLines[0].replace(/"/g, '').startsWith("Attività,Tempo Previsto (min)");
-        const dataLines = hasHeader ? allLines.slice(1) : allLines;
-
-        const newActivities: Activity[] = dataLines.map((line, index) => {
-            try {
-                let name: string = '';
-                let duration: number = NaN;
-
-                if (hasHeader) {
-                    if (line.startsWith('"')) {
-                        let nameEndIndex = -1;
-                        for (let i = 1; i < line.length; i++) {
-                            if (line[i] === '"') {
-                                if (i + 1 < line.length && line[i + 1] === '"') {
-                                    i++; 
-                                } else {
-                                    nameEndIndex = i;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (nameEndIndex !== -1) {
-                            name = line.substring(1, nameEndIndex).replace(/""/g, '"');
-                            const rest = line.substring(nameEndIndex + 2);
-                            const parts = rest.split(',');
-                            if (parts.length > 0) {
-                                duration = parseInt(parts[0], 10);
-                            }
-                        }
-                    }
-                } else {
-                    const firstCommaIndex = line.indexOf(',');
-                    if (firstCommaIndex !== -1) {
-                        duration = parseInt(line.substring(0, firstCommaIndex), 10);
-                        let namePart = line.substring(firstCommaIndex + 1).trim();
-                        if (namePart.startsWith('"') && namePart.endsWith('"')) {
-                            name = namePart.substring(1, namePart.length - 1).replace(/""/g, '"');
-                        } else {
-                            name = namePart;
-                        }
-                    }
-                }
-
-                if (name && !isNaN(duration) && duration > 0) {
-                    return {
-                        id: `csv-${new Date().getTime()}-${index}`,
-                        name,
-                        type: 'activity',
-                        plannedDuration: duration * 60,
-                        actualDuration: null,
-                        startTime: null,
-                        endTime: null,
-                        status: ActivityStatus.Pending,
-                    };
-                }
-            } catch (error) {
-                console.error("Errore during parsing della riga CSV:", line, error);
-            }
-            return null;
-        }).filter((act): act is Activity => act !== null);
+        
+        const newActivities = markdownToActivities(text);
 
         if (newActivities.length > 0) {
             setActivities(prev => [...prev, ...newActivities]);
+            alert(`${newActivities.length} attività importate con successo dal template.`);
+        } else {
+            alert("Nessuna attività valida trovata nel file. Controlla il formato del file.");
         }
     };
     reader.readAsText(file);
@@ -367,22 +307,15 @@ const handleImportDataCSV = (file: File) => {
     }
   };
 
-  const handleExportTemplateCSV = () => {
-    const dataActivities = activities.filter(act => act.type === 'activity');
-    const csvRows = dataActivities.map(act => {
-        const plannedMinutes = Math.round(act.plannedDuration / 60);
-        const name = `"${act.name.replace(/"/g, '""')}"`;
-        return [plannedMinutes, name].join(',');
-    });
+  const handleExportMarkdownTemplate = () => {
+    const markdownContent = activitiesToMarkdown(activities);
 
-    const csvContent = csvRows.join('\n');
-
-    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' });
     const link = document.createElement("a");
     if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        link.setAttribute("download", `template_riunione_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute("download", `template_riunione_${new Date().toISOString().split('T')[0]}.md`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -491,9 +424,9 @@ const handleImportDataCSV = (file: File) => {
           countdown={countdown}
           meetingStartTime={meetingStartTime}
           setMeetingStartTime={setMeetingStartTime}
-          handleImportCSV={handleImportCSV}
+          handleImportMarkdownTemplate={handleImportMarkdownTemplate}
           handleExportCSV={handleExportCSV}
-          handleExportTemplateCSV={handleExportTemplateCSV}
+          handleExportMarkdownTemplate={handleExportMarkdownTemplate}
           handleImportDataCSV={handleImportDataCSV}
           handleClearData={handleClearData}
           ignoreThreshold={ignoreThreshold}

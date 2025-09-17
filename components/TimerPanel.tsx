@@ -8,9 +8,9 @@ interface TimerPanelProps {
   countdown: number;
   meetingStartTime: Date;
   setMeetingStartTime: (date: Date) => void;
-  handleImportCSV: (file: File) => void;
+  handleImportMarkdownTemplate: (file: File) => void;
   handleExportCSV: () => void;
-  handleExportTemplateCSV: () => void;
+  handleExportMarkdownTemplate: () => void;
   handleImportDataCSV: (file: File) => void;
   handleClearData: () => void;
   ignoreThreshold: number;
@@ -35,9 +35,9 @@ export const TimerPanel: React.FC<TimerPanelProps> = ({
   countdown,
   meetingStartTime,
   setMeetingStartTime,
-  handleImportCSV,
+  handleImportMarkdownTemplate,
   handleExportCSV,
-  handleExportTemplateCSV,
+  handleExportMarkdownTemplate,
   handleImportDataCSV,
   handleClearData,
   ignoreThreshold,
@@ -102,7 +102,7 @@ export const TimerPanel: React.FC<TimerPanelProps> = ({
   const onTemplateFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      handleImportCSV(file);
+      handleImportMarkdownTemplate(file);
       if (e.target) e.target.value = '';
     }
   };
@@ -200,20 +200,20 @@ export const TimerPanel: React.FC<TimerPanelProps> = ({
         <h3 className="font-semibold text-slate-300 mb-4 text-center text-lg">Gestione Dati e Template</h3>
         
         <input type="file" accept=".csv" ref={dataFileInputRef} onChange={onDataFileChange} className="hidden" aria-hidden="true" />
-        <input type="file" accept=".csv" ref={templateFileInputRef} onChange={onTemplateFileChange} className="hidden" aria-hidden="true" />
+        <input type="file" accept=".md,.txt" ref={templateFileInputRef} onChange={onTemplateFileChange} className="hidden" aria-hidden="true" />
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
             onClick={() => dataFileInputRef.current?.click()}
             className="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-lg transition-colors"
           >
-            Importa Dati
+            Importa Dati (.csv)
           </button>
            <button
             onClick={() => templateFileInputRef.current?.click()}
             className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-colors"
           >
-            Importa Template
+            Importa Template (.md)
           </button>
           
           {activities.length > 0 && (
@@ -222,13 +222,13 @@ export const TimerPanel: React.FC<TimerPanelProps> = ({
                 onClick={handleExportCSV}
                 className="bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-lg transition-colors"
               >
-                Esporta Dati
+                Esporta Dati (.csv)
               </button>
               <button
-                onClick={handleExportTemplateCSV}
+                onClick={handleExportMarkdownTemplate}
                 className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-4 rounded-lg transition-colors"
               >
-                Esporta Template
+                Esporta Template (.md)
               </button>
             </>
           )}
