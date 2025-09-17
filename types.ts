@@ -1,4 +1,3 @@
-
 // FIX: Removed circular import of 'Activity' as it is defined within this file.
 
 export enum ActivityStatus {
@@ -83,16 +82,29 @@ export const markdownToActivities = (markdown: string): Activity[] => {
 };
 
 export const activitiesToMarkdown = (activities: Activity[]): string => {
-  return activities
-    .map(act => {
-      switch (act.type) {
-        case 'h1': return `# ${act.name}`;
-        case 'h2': return `## ${act.name}`;
-        case 'h3': return `### ${act.name}`;
+  let markdownString = '';
+  activities.forEach((act, index) => {
+    const prevActivity = index > 0 ? activities[index - 1] : null;
+
+    // Add spacing before headings for readability
+    if (act.type.startsWith('h') && prevActivity && prevActivity.type === 'activity') {
+        markdownString += '\n';
+    }
+
+    switch (act.type) {
+        case 'h1': 
+            markdownString += `# ${act.name}\n\n`; // Add extra space after H1
+            break;
+        case 'h2': 
+            markdownString += `## ${act.name}\n`;
+            break;
+        case 'h3': 
+            markdownString += `### ${act.name}\n`;
+            break;
         case 'activity':
         default:
-          return `- ${act.name} [${Math.round(act.plannedDuration / 60)} min]`;
-      }
-    })
-    .join('\n');
+          markdownString += `- ${act.name} [${Math.round(act.plannedDuration / 60)} min]\n`;
+    }
+  });
+  return markdownString.trim();
 };
